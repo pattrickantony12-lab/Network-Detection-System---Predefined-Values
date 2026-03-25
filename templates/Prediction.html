@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>IDS Prediction</title>
+
+<style>
+body{
+    font-family:Segoe UI;
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.card{
+    background:white;
+    padding:40px;
+    border-radius:15px;
+    width:600px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.3);
+}
+
+h2{
+    text-align:center;
+    color:#667eea;
+}
+
+textarea{
+    width:100%;
+    height:120px;
+    padding:10px;
+    margin:15px 0;
+    border-radius:10px;
+    border:1px solid #ccc;
+    font-size:14px;
+}
+
+button{
+    width:100%;
+    padding:12px;
+    background:#667eea;
+    color:white;
+    border:none;
+    border-radius:8px;
+    font-weight:bold;
+    cursor:pointer;
+}
+
+.result{
+    margin-top:20px;
+    padding:15px;
+    background:#f1f1f1;
+    border-radius:10px;
+    text-align:center;
+    font-size:18px;
+    font-weight:bold;
+}
+</style>
+
+</head>
+<body>
+
+<div class="card">
+
+<h2>IDS Raw Packet Prediction</h2>
+
+<form method="POST" action="/predict">
+    <textarea name="raw" placeholder="Enter CSV raw values here..." required></textarea>
+    <button type="submit">Predict Attack</button>
+</form>
+
+{% if result %}
+<div class="result">
+    Result: {{ result }} <br>
+    Confidence: {{ confidence }}
+</div>
+{% endif %}
+
+    <p style="text-align:center;margin-top:10px;">
+Logout? <a href="/">Logout</a>
+</p>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,83 @@
+
+<html>
+<head>
+<title>Register</title>
+<style>
+body{
+    font-family:Segoe UI;
+    background:linear-gradient(135deg,#667eea,#764ba2);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+.card{
+    background:white;
+    padding:40px;
+    border-radius:15px;
+    width:350px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.3);
+}
+h2{text-align:center;color:#667eea;}
+input{
+    width:100%;
+    padding:10px;
+    margin:10px 0;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+button{
+    width:100%;
+    padding:10px;
+    background:#667eea;
+    color:white;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+<h2>Register</h2>
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <script>
+      var messages = {{ messages | safe }};
+      for (var i=0; i<messages.length; i++) {
+        alert(messages[i]);
+      }
+    </script>
+  {% endif %}
+{% endwith %}
+<form method="POST" action="/newuser">
+<input type="text" name="name" placeholder="Full Name" required>
+
+<input type="text" name="mobile"
+       placeholder="Mobile (10 digits)"
+       pattern="[6-9]{1}[0-9]{9}"
+       title="Enter valid 10-digit mobile number"
+       required>
+
+<input type="email" name="email"
+       placeholder="Email"
+       pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$"
+       title="Enter valid email address"
+       required>
+
+<input type="password" name="password"
+       placeholder="Password"
+       minlength="6"
+       required>
+
+<button type="submit">Register</button>
+</form>
+
+<p style="text-align:center;margin-top:10px;">
+Already have account? <a href="/login">Login</a>
+</p>
+
+</div>
+</body>
+</html>

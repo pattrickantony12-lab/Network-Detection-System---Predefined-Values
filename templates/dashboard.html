@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time IDS Dashboard</title>
+    
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    
+    <!-- Socket.IO for real-time updates -->
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 32px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse 2s infinite;
+            margin-right: 8px;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card h3 {
+            color: #666;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .stat-card.total .stat-value { color: #2196f3; }
+        .stat-card.attacks .stat-value { color: #f44336; }
+        .stat-card.normal .stat-value { color: #4caf50; }
+        .stat-card.rate .stat-value { color: #ff9800; }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .chart-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .chart-card h3 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .logs-section {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .logs-section h3 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .log-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        .log-table thead {
+            background: #f8f9fa;
+        }
+        
+        .log-table th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .log-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .log-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+        
+        .attack-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .attack-badge.normal {
+            background: #e8f5e9;
+            color: #4caf50;
+        }
+        
+        .attack-badge.attack {
+            background: #ffebee;
+            color: #f44336;
+        }
+        
+        .protocol-badge {
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .protocol-badge.tcp {
+            background: #e3f2fd;
+            color: #2196f3;
+        }
+        
+        .protocol-badge.udp {
+            background: #f3e5f5;
+            color: #9c27b0;
+        }
+        
+        .protocol-badge.icmp {
+            background: #fff3e0;
+            color: #ff9800;
+        }
+        
+        .confidence {
+            font-weight: 600;
+        }
+        
+        .confidence.high {
+            color: #f44336;
+        }
+        
+        .confidence.medium {
+            color: #ff9800;
+        }
+        
+        .confidence.low {
+            color: #4caf50;
+        }
+        
+        .new-packet {
+            animation: highlight 1s ease;
+        }
+        
+        @keyframes highlight {
+            0% { background: #fff3e0; }
+            100% { background: transparent; }
+        }
+        
+        .no-data {
+            text-align: center;
+            padding: 40px;
+            color: #999;
+            font-style: italic;
+        }
+        
+        @media (max-width: 768px) {
+            .stats-grid, .charts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .log-table {
+                font-size: 12px;
+            }
+            
+            .log-table th, .log-table td {
+                padding: 8px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>
+                <span class="status-indicator"></span>
+                Real-Time Intrusion Detection System
+            </h1>
+            <p>Live Network Traffic Analysis & Threat Detection</p>
+             <a href="/">Home</a>
+        </div>
+        
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card total">
+                <h3>Total Packets</h3>
+                <div class="stat-value" id="total-packets">0</div>
+            </div>
+            
+            <div class="stat-card attacks">
+                <h3>Attacks Detected</h3>
+                <div class="stat-value" id="attacks-detected">0</div>
+            </div>
+            
+            <div class="stat-card normal">
+                <h3>Normal Traffic</h3>
+                <div class="stat-value" id="normal-packets">0</div>
+            </div>
+            
+            <div class="stat-card rate">
+                <h3>Attack Rate</h3>
+                <div class="stat-value" id="attack-rate">0%</div>
+            </div>
+        </div>
+        
+        <!-- Charts -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>Protocol Distribution</h3>
+                <canvas id="protocol-chart"></canvas>
+            </div>
+            
+            <div class="chart-card">
+                <h3>Attack Types</h3>
+                <canvas id="attack-chart"></canvas>
+            </div>
+        </div>
+        
+        <!-- Recent Logs -->
+        <div class="logs-section">
+            <h3>Recent Activity</h3>
+            <div style="overflow-x: auto;">
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>Packet #</th>
+                            <th>Protocol</th>
+                            <th>Classification</th>
+                            <th>Confidence</th>
+                        </tr>
+                    </thead>
+                    <tbody id="logs-body">
+                        <tr>
+                            <td colspan="5" class="no-data">Waiting for packets...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Initialize Socket.IO connection
+        const socket = io('/ids');
+        
+        // Chart instances
+        let protocolChart = null;
+        let attackChart = null;
+        
+        // Initialize Protocol Chart
+        function initProtocolChart() {
+            const ctx = document.getElementById('protocol-chart').getContext('2d');
+            protocolChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['TCP', 'UDP', 'ICMP'],
+                    datasets: [{
+                        data: [0, 0, 0],
+                        backgroundColor: [
+                            '#2196f3',
+                            '#9c27b0',
+                            '#ff9800'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Initialize Attack Chart
+        function initAttackChart() {
+            const ctx = document.getElementById('attack-chart').getContext('2d');
+            attackChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Count',
+                        data: [],
+                        backgroundColor: '#f44336',
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Update Statistics
+        function updateStats(stats) {
+            document.getElementById('total-packets').textContent = stats.total_packets.toLocaleString();
+            document.getElementById('attacks-detected').textContent = stats.attacks_detected.toLocaleString();
+            document.getElementById('normal-packets').textContent = stats.normal_packets.toLocaleString();
+            
+            const attackRate = stats.total_packets > 0 
+                ? ((stats.attacks_detected / stats.total_packets) * 100).toFixed(2) 
+                : 0;
+            document.getElementById('attack-rate').textContent = attackRate + '%';
+            
+            // Update Protocol Chart
+            if (protocolChart) {
+                protocolChart.data.datasets[0].data = [
+                    stats.protocol_distribution.tcp || 0,
+                    stats.protocol_distribution.udp || 0,
+                    stats.protocol_distribution.icmp || 0
+                ];
+                protocolChart.update();
+            }
+            
+            // Update Attack Chart
+            if (attackChart && stats.attack_types) {
+                const labels = Object.keys(stats.attack_types);
+                const data = Object.values(stats.attack_types);
+                
+                attackChart.data.labels = labels;
+                attackChart.data.datasets[0].data = data;
+                attackChart.update();
+            }
+            
+            // Update logs table
+            if (stats.recent_logs && stats.recent_logs.length > 0) {
+                updateLogsTable(stats.recent_logs);
+            }
+        }
+        
+        // Update Logs Table
+        function updateLogsTable(logs) {
+            const tbody = document.getElementById('logs-body');
+            tbody.innerHTML = '';
+            
+            logs.forEach(log => {
+                const row = document.createElement('tr');
+                
+                const isAttack = log.attack.toLowerCase() !== 'normal';
+                const confidence = parseFloat(log.confidence);
+                const confidenceClass = confidence >= 90 ? 'high' : confidence >= 70 ? 'medium' : 'low';
+                
+                row.innerHTML = `
+                    <td>${log.timestamp}</td>
+                    <td>#${log.packet}</td>
+                    <td><span class="protocol-badge ${log.protocol}">${log.protocol.toUpperCase()}</span></td>
+                    <td><span class="attack-badge ${isAttack ? 'attack' : 'normal'}">${log.attack}</span></td>
+                    <td><span class="confidence ${confidenceClass}">${log.confidence}%</span></td>
+                `;
+                
+                tbody.appendChild(row);
+            });
+        }
+        
+        // Add single packet (for animation)
+        function addNewPacket(packet) {
+            const tbody = document.getElementById('logs-body');
+            const row = document.createElement('tr');
+            row.className = 'new-packet';
+            
+            const isAttack = packet.attack.toLowerCase() !== 'normal';
+            const confidence = parseFloat(packet.confidence);
+            const confidenceClass = confidence >= 90 ? 'high' : confidence >= 70 ? 'medium' : 'low';
+            
+            row.innerHTML = `
+                <td>${packet.timestamp}</td>
+                <td>#${packet.packet}</td>
+                <td><span class="protocol-badge ${packet.protocol}">${packet.protocol.toUpperCase()}</span></td>
+                <td><span class="attack-badge ${isAttack ? 'attack' : 'normal'}">${packet.attack}</span></td>
+                <td><span class="confidence ${confidenceClass}">${packet.confidence}%</span></td>
+            `;
+            
+            tbody.insertBefore(row, tbody.firstChild);
+            
+            // Keep only last 20 rows
+            while (tbody.children.length > 20) {
+                tbody.removeChild(tbody.lastChild);
+            }
+        }
+        
+        // Socket.IO event handlers
+        socket.on('connect', function() {
+            console.log('Connected to IDS server');
+        });
+        
+        socket.on('stats_update', function(stats) {
+            updateStats(stats);
+        });
+        
+        socket.on('new_packet', function(packet) {
+            addNewPacket(packet);
+        });
+        
+        socket.on('disconnect', function() {
+            console.log('Disconnected from IDS server');
+        });
+        
+        // Initialize charts on page load
+        window.addEventListener('load', function() {
+            initProtocolChart();
+            initAttackChart();
+        });
+    </script>
+</body>
+</html>
