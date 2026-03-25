@@ -80,14 +80,7 @@ ________________________________________
 ________________________________________
 🎯 Objective
 To provide a real-time, efficient, and user-friendly solution for detecting and analyzing network intrusions with visualization and reporting capabilities.
-________________________________________
-📸 Screenshots
-Add your project screenshots here
-________________________________________
+________________________________________________________________________________
 📜 License
 This project is open-source and available under the MIT License.
-________________________________________
-🙌 Author
-Your Name
-________________________________________
-⭐ If you like this project, consider giving it a star!
+
