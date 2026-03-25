@@ -29,7 +29,7 @@ ________________________________________
 ________________________________________
 ⚙️ Installation & Setup
 1. Clone the Repository
-git clone 
+git clone https://github.com/pattrickantony12-lab/Network-Detection-System---Predefined-Values.git
 cd nids-project
 2. Create Virtual Environment
 python -m venv venv
